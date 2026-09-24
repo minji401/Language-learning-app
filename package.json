@@ -1,0 +1,9 @@
+{
+  "name": "contextual-echo",
+  "private": true,
+  "scripts": {
+    "mobile": "npm --prefix apps/mobile start",
+    "api": "npm --prefix apps/api dev",
+    "typecheck:api": "npm --prefix apps/api typecheck"
+  }
+}
