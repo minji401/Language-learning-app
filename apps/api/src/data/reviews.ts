@@ -7,9 +7,29 @@ import type { ReviewCardRow } from "./rows";
 const reviewSelect = `
   id, sentence_id, user_id, ease_factor, interval_days, repetitions, next_review_at, last_reviewed_at,
   sentences!inner (
-    id, recording_id, user_id, original_text, local_expression, korean_meaning, context, examples, position, saved, created_at
+    id, recording_id, user_id, speaker, original_text, local_expression, korean_meaning, context, examples, position, saved, created_at
   )
 `;
+
+export async function ensureReviewCard(userId: string, sentenceId: string) {
+  const { error } = await getSupabaseAdmin().from("review_cards").insert({
+    sentence_id: sentenceId,
+    user_id: userId,
+  });
+
+  if (!error || error.code === "23505") return;
+  throw new HttpError(500, error.message);
+}
+
+export async function deleteReviewCardForSentence(userId: string, sentenceId: string) {
+  const { error } = await getSupabaseAdmin()
+    .from("review_cards")
+    .delete()
+    .eq("user_id", userId)
+    .eq("sentence_id", sentenceId);
+
+  if (error) throw new HttpError(500, error.message);
+}
 
 export async function listDueReviews(userId: string) {
   const { data, error } = await getSupabaseAdmin()

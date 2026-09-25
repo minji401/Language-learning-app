@@ -1,10 +1,29 @@
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 
+import { AudioCapture } from "@/components/AudioCapture";
 import { Text, View } from "@/components/Themed";
-import { sampleRecordings } from "@/lib/mockData";
+import { listMyRecordings } from "@/lib/recordings";
+import type { Recording } from "@/lib/types";
 
 export default function HomeScreen() {
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
+
+  const reload = useCallback(() => {
+    listMyRecordings()
+      .then((next) => {
+        setRecordings(next);
+        setListError(null);
+      })
+      .catch((caught: unknown) => {
+        setListError(caught instanceof Error ? caught.message : "Could not load recordings");
+      });
+  }, []);
+
+  useFocusEffect(reload);
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.kicker}>Contextual Echo</Text>
@@ -12,27 +31,25 @@ export default function HomeScreen() {
         Record a conversation, then keep the sentences worth saying again.
       </Text>
 
-      <View style={styles.actions}>
-        <Pressable style={styles.primary} onPress={() => router.push("/capture" as Href)}>
-          <Text style={styles.primaryLabel}>Record conversation</Text>
-        </Pressable>
-        <Pressable style={styles.secondary} onPress={() => router.push("/capture" as Href)}>
-          <Text style={styles.secondaryLabel}>Upload audio</Text>
-        </Pressable>
-      </View>
+      <AudioCapture onComplete={reload} />
 
       <Text style={styles.section}>Recent</Text>
-      {sampleRecordings.map((recording) => (
-        <Pressable
-          key={recording.id}
-          style={styles.card}
-          onPress={() => router.push(`/recording/${recording.id}` as Href)}>
-          <Text style={styles.cardTitle}>{recording.title}</Text>
-          <Text style={styles.cardMeta}>
-            {recording.source === "record" ? "Recorded" : "Uploaded"} · {recording.status}
-          </Text>
-        </Pressable>
-      ))}
+      {listError ? <Text style={styles.error}>{listError}</Text> : null}
+      {recordings.length === 0 ? (
+        <Text style={styles.empty}>Recordings you upload will show up here.</Text>
+      ) : (
+        recordings.map((recording) => (
+          <Pressable
+            key={recording.id}
+            style={styles.card}
+            onPress={() => router.push(`/recording/${recording.id}` as Href)}>
+            <Text style={styles.cardTitle}>{recording.title ?? "Conversation"}</Text>
+            <Text style={styles.cardMeta}>
+              {recording.source === "record" ? "Recorded" : "Uploaded"} · {recording.status}
+            </Text>
+          </Pressable>
+        ))
+      )}
     </ScrollView>
   );
 }
@@ -51,37 +68,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     opacity: 0.75,
   },
-  actions: {
-    gap: 10,
-    marginTop: 8,
-  },
-  primary: {
-    backgroundColor: "#0E7C66",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  primaryLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondary: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#0E7C66",
-  },
-  secondaryLabel: {
-    color: "#0E7C66",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   section: {
     marginTop: 18,
     fontSize: 18,
     fontWeight: "700",
+  },
+  empty: {
+    opacity: 0.65,
+  },
+  error: {
+    color: "#9B3A3A",
   },
   card: {
     borderRadius: 14,

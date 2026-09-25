@@ -30,7 +30,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="review"
         options={{
-          title: "Review",
+          title: "연습장",
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{

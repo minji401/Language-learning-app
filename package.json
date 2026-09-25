@@ -2,8 +2,8 @@
   "name": "contextual-echo",
   "private": true,
   "scripts": {
-    "mobile": "npm --prefix apps/mobile start",
-    "api": "npm --prefix apps/api dev",
-    "typecheck:api": "npm --prefix apps/api typecheck"
+    "mobile": "npm --prefix apps/mobile run start",
+    "api": "npm --prefix apps/api run dev",
+    "typecheck:api": "npm --prefix apps/api run typecheck"
   }
 }

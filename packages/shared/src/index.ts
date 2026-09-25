@@ -9,6 +9,8 @@ export type RecordingStatus =
 
 export type ReviewGrade = "again" | "hard" | "good" | "easy";
 
+export type SpeakerRole = "A" | "B";
+
 export interface ExampleSentence {
   expression: string;
   korean: string;
@@ -22,6 +24,7 @@ export interface Recording {
   audioPath: string;
   status: RecordingStatus;
   transcript: string | null;
+  speakerTranscript: string | null;
   errorMessage: string | null;
   createdAt: string;
 }
@@ -30,6 +33,7 @@ export interface LearningSentence {
   id: string;
   recordingId: string;
   userId: string;
+  speaker: SpeakerRole | null;
   originalText: string;
   localExpression: string | null;
   koreanMeaning: string | null;
@@ -72,6 +76,7 @@ export interface GradeReviewInput {
 }
 
 export interface ExtractedSentence {
+  speaker: SpeakerRole;
   originalText: string;
   localExpression: string;
   koreanMeaning: string;

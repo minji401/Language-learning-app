@@ -1,10 +1,23 @@
 import { HttpError } from "../http";
 import { getSupabaseAdmin } from "../lib/supabase";
+import { deleteReviewCardForSentence, ensureReviewCard } from "./reviews";
 import { toSentence } from "./mappers";
 import type { SentenceRow } from "./rows";
 
 const sentenceColumns =
-  "id, recording_id, user_id, original_text, local_expression, korean_meaning, context, examples, position, saved, created_at";
+  "id, recording_id, user_id, speaker, original_text, local_expression, korean_meaning, context, examples, position, saved, created_at";
+
+export async function listSavedSentences(userId: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("sentences")
+    .select(sentenceColumns)
+    .eq("user_id", userId)
+    .eq("saved", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new HttpError(500, error.message);
+  return ((data ?? []) as SentenceRow[]).map(toSentence);
+}
 
 export async function getSentence(userId: string, sentenceId: string) {
   const { data, error } = await getSupabaseAdmin()
@@ -30,5 +43,9 @@ export async function setSentenceSaved(userId: string, sentenceId: string, saved
 
   if (error?.code === "PGRST116") throw new HttpError(404, "Sentence not found");
   if (error) throw new HttpError(500, error.message);
+
+  if (saved) await ensureReviewCard(userId, sentenceId);
+  else await deleteReviewCardForSentence(userId, sentenceId);
+
   return toSentence(data as SentenceRow);
 }

@@ -8,6 +8,7 @@ export interface RecordingRow {
   audio_path: string;
   status: RecordingStatus;
   transcript: string | null;
+  speaker_transcript: string | null;
   error_message: string | null;
   created_at: string;
 }
@@ -16,6 +17,7 @@ export interface SentenceRow {
   id: string;
   recording_id: string;
   user_id: string;
+  speaker: "A" | "B" | null;
   original_text: string;
   local_expression: string | null;
   korean_meaning: string | null;

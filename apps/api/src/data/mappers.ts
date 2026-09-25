@@ -18,6 +18,7 @@ export function toRecording(row: RecordingRow): Recording {
     audioPath: row.audio_path,
     status: row.status,
     transcript: row.transcript,
+    speakerTranscript: row.speaker_transcript,
     errorMessage: row.error_message,
     createdAt: row.created_at,
   };
@@ -28,6 +29,7 @@ export function toSentence(row: SentenceRow): LearningSentence {
     id: row.id,
     recordingId: row.recording_id,
     userId: row.user_id,
+    speaker: row.speaker === "A" || row.speaker === "B" ? row.speaker : null,
     originalText: row.original_text,
     localExpression: row.local_expression,
     koreanMeaning: row.korean_meaning,

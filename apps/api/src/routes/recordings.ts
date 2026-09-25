@@ -84,19 +84,21 @@ recordingsRouter.post(
 
       const filename = recording.audioPath.split("/").pop() || "audio.m4a";
       const audio = await downloadRecording(recording.audioPath);
-      const transcript = await transcribeAudio(audio, filename);
+      const transcribed = await transcribeAudio(audio, filename);
 
       await updateRecordingStatus(userId, recordingId, {
         status: "analyzing",
-        transcript,
+        transcript: transcribed.text,
+        speakerTranscript: transcribed.speakerTranscript || null,
         errorMessage: null,
       });
 
-      const extracted = await analyzeTranscript(transcript);
-      await replaceSentences(userId, recordingId, extracted);
+      const extracted = await analyzeTranscript(transcribed.speakerTranscript || transcribed.text);
+      await replaceSentences(userId, recordingId, extracted.sentences);
       await updateRecordingStatus(userId, recordingId, {
         status: "ready",
-        transcript,
+        transcript: transcribed.text,
+        speakerTranscript: transcribed.speakerTranscript || extracted.speakerTranscript,
         errorMessage: null,
       });
     } catch (error) {
@@ -104,6 +106,50 @@ recordingsRouter.post(
       await updateRecordingStatus(userId, recordingId, {
         status: "failed",
         errorMessage: message,
+      });
+      throw error;
+    }
+
+    const [updated, sentences] = await Promise.all([
+      getRecording(userId, recordingId),
+      listSentencesForRecording(userId, recordingId),
+    ]);
+    res.json({ recording: updated, sentences });
+  }),
+);
+
+recordingsRouter.post(
+  "/:id/reanalyze",
+  asyncHandler(async (req, res) => {
+    const userId = req.userId!;
+    const recordingId = req.params.id;
+    const recording = await getRecording(userId, recordingId);
+
+    if (!recording.transcript) {
+      throw new HttpError(400, "This recording has no transcript to analyze");
+    }
+    if (recording.status === "transcribing" || recording.status === "analyzing") {
+      throw new HttpError(409, "This recording is already being processed");
+    }
+
+    try {
+      await updateRecordingStatus(userId, recordingId, {
+        status: "analyzing",
+        errorMessage: null,
+      });
+
+      const extracted = await analyzeTranscript(recording.transcript);
+      await replaceSentences(userId, recordingId, extracted.sentences);
+      await updateRecordingStatus(userId, recordingId, {
+        status: "ready",
+        speakerTranscript: extracted.speakerTranscript,
+        errorMessage: null,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Processing failed";
+      await updateRecordingStatus(userId, recordingId, {
+        status: recording.status === "ready" ? "ready" : "failed",
+        errorMessage: recording.status === "ready" ? null : message,
       });
       throw error;
     }

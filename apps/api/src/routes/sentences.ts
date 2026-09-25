@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { getSentence, setSentenceSaved } from "../data/sentences";
+import { getSentence, listSavedSentences, setSentenceSaved } from "../data/sentences";
 import { asyncHandler } from "../http";
 import { requireUser } from "../middleware/requireUser";
 
@@ -12,6 +12,14 @@ const updateSchema = z.object({
 export const sentencesRouter = Router();
 
 sentencesRouter.use(requireUser);
+
+sentencesRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const sentences = await listSavedSentences(req.userId!);
+    res.json({ sentences });
+  }),
+);
 
 sentencesRouter.get(
   "/:id",
